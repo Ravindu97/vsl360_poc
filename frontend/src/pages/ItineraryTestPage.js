@@ -7,23 +7,28 @@ import {
     Box,
     CircularProgress,
     Alert,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
 } from '@mui/material';
 import axios from 'axios';
 
 const ItineraryTestPage = () => {
     const [testData, setTestData] = useState(null);
+    const [localImages, setLocalImages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
     const [tripName, setTripName] = useState('');
 
     const API_BASE_URL = 'http://localhost:8000/api/v1/test/itinerary';
+
+    const loadLocalImages = async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/local-images`);
+            setLocalImages(response.data.images || []);
+        } catch (err) {
+            // Keep UI usable even if listing images fails.
+            setLocalImages([]);
+        }
+    };
 
     // Load test data
     const loadTestData = async () => {
@@ -33,6 +38,7 @@ const ItineraryTestPage = () => {
             const response = await axios.get(`${API_BASE_URL}/test-data`);
             setTestData(response.data);
             setTripName(response.data.trip_name);
+            await loadLocalImages();
         } catch (err) {
             setError('Failed to load test data: ' + err.message);
         } finally {
@@ -58,7 +64,7 @@ const ItineraryTestPage = () => {
             link.setAttribute('download', `${tripName || 'itinerary'}.pdf`);
             document.body.appendChild(link);
             link.click();
-            link.parentURL.removeChild(link);
+            link.parentNode.removeChild(link);
             window.URL.revokeObjectURL(url);
 
             setSuccess('PDF downloaded successfully!');
@@ -173,7 +179,33 @@ const ItineraryTestPage = () => {
                                 InputLabelProps={{ shrink: true }}
                                 fullWidth
                             />
+                            <TextField
+                                label="Cover Image Filename (Local)"
+                                value={testData.cover_image_path || ''}
+                                onChange={(e) => handleDataChange('cover_image_path', e.target.value)}
+                                helperText="Use a filename from sample_itinerary/images"
+                                fullWidth
+                            />
+                            <TextField
+                                label="Cover Image URL (Optional Fallback)"
+                                value={testData.cover_image_url || ''}
+                                onChange={(e) => handleDataChange('cover_image_url', e.target.value)}
+                                fullWidth
+                            />
                         </Box>
+                        {localImages.length > 0 && (
+                            <Box sx={{ mt: 2, p: 2, backgroundColor: '#f3f5f7', borderRadius: 1 }}>
+                                <strong>Available Local Images</strong>
+                                <p style={{ marginTop: 8, marginBottom: 0, color: '#555' }}>
+                                    Copy any filename below into cover/day image fields.
+                                </p>
+                                <Box sx={{ mt: 1, maxHeight: 140, overflow: 'auto', fontSize: 13 }}>
+                                    {localImages.map((name) => (
+                                        <div key={name}>{name}</div>
+                                    ))}
+                                </Box>
+                            </Box>
+                        )}
                     </Paper>
 
                     {/* Days Section */}
@@ -208,6 +240,27 @@ const ItineraryTestPage = () => {
                                         onChange={(e) => {
                                             const newData = { ...testData };
                                             newData.days[dayIndex].city = e.target.value;
+                                            setTestData(newData);
+                                        }}
+                                        fullWidth
+                                    />
+                                    <TextField
+                                        label="Day Image Filename (Local)"
+                                        value={day.image_path || ''}
+                                        onChange={(e) => {
+                                            const newData = { ...testData };
+                                            newData.days[dayIndex].image_path = e.target.value;
+                                            setTestData(newData);
+                                        }}
+                                        helperText="Filename from sample_itinerary/images"
+                                        fullWidth
+                                    />
+                                    <TextField
+                                        label="Day Image URL (Optional)"
+                                        value={day.image_url || ''}
+                                        onChange={(e) => {
+                                            const newData = { ...testData };
+                                            newData.days[dayIndex].image_url = e.target.value;
                                             setTestData(newData);
                                         }}
                                         fullWidth

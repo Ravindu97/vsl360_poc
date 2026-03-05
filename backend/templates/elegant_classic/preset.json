@@ -1,0 +1,24 @@
+{
+  "id": "elegant_classic",
+  "label": "Elegant Classic",
+  "description": "Warm premium layout with serif typography and gold accents.",
+  "tokens": {
+    "paper": "#f5efe7",
+    "panel": "#fffaf2",
+    "line": "#d9cdbb",
+    "text": "#2c2c2c",
+    "muted": "#666666",
+    "gold": "#b8860b",
+    "gold_dark": "#8b6914",
+    "cover_overlay": "rgba(20, 16, 10, 0.26)",
+    "cover_title": "#ffffff"
+  },
+  "layout": {
+    "page_padding_mm": 13,
+    "cover_image_height_mm": 150,
+    "day_image_height_mm": 62,
+    "day_image_width_mm": 66,
+    "corner_radius_px": 10,
+    "title_tracking_px": 1
+  }
+}

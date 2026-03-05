@@ -1,0 +1,24 @@
+{
+  "id": "elegant_modern",
+  "label": "Elegant Modern",
+  "description": "Editorial itinerary style with soft blue-gold palette and clean spacing.",
+  "tokens": {
+    "paper": "#f2f4f0",
+    "panel": "#ffffff",
+    "line": "#cfd6cf",
+    "text": "#1f2a2f",
+    "muted": "#5f6d73",
+    "gold": "#9b7a31",
+    "gold_dark": "#6f571f",
+    "cover_overlay": "rgba(28, 40, 48, 0.28)",
+    "cover_title": "#ffffff"
+  },
+  "layout": {
+    "page_padding_mm": 13,
+    "cover_image_height_mm": 150,
+    "day_image_height_mm": 62,
+    "day_image_width_mm": 66,
+    "corner_radius_px": 8,
+    "title_tracking_px": 1
+  }
+}

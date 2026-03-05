@@ -1,0 +1,265 @@
+@page {
+    size: A4;
+    margin: 0;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    color: var(--text);
+    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+    background: white;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: var(--page-padding-mm);
+    background: linear-gradient(180deg, var(--paper) 0%, #eef3ed 100%);
+    page-break-after: always;
+    position: relative;
+}
+
+.page:last-child {
+    page-break-after: auto;
+}
+
+.cover {
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    gap: 8mm;
+}
+
+.brand {
+    border-left: 4px solid var(--gold);
+    color: var(--gold_dark);
+    padding: 4mm 5mm;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    font-size: 10px;
+    background: var(--panel);
+}
+
+.cover-title {
+    text-align: left;
+}
+
+.cover-title h1 {
+    margin: 0;
+    color: var(--gold_dark);
+    text-transform: uppercase;
+    font-size: 30px;
+    letter-spacing: var(--title-tracking-px);
+}
+
+.cover-title p {
+    margin: 2mm 0 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.cover-image-wrap {
+    border: 1px solid var(--line);
+    min-height: var(--cover-image-height-mm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    background: #dce2dd;
+}
+
+.cover-image-wrap::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--cover-overlay);
+}
+
+.cover-image-wrap img {
+    width: 100%;
+    height: var(--cover-image-height-mm);
+    object-fit: cover;
+    display: block;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3mm;
+}
+
+.summary-item {
+    border-top: 2px solid var(--gold);
+    background: var(--panel);
+    padding: 3mm;
+    text-align: center;
+}
+
+.summary-item .label {
+    color: var(--muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.summary-item .value {
+    margin-top: 1mm;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--gold_dark);
+}
+
+.section-title {
+    margin: 0 0 4mm;
+    font-size: 18px;
+    text-transform: uppercase;
+    color: var(--gold_dark);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 2mm;
+    letter-spacing: 0.7px;
+}
+
+.overview {
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 7mm;
+}
+
+.location-summary {
+    margin: 0;
+    padding-left: 5mm;
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.day-page {
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    gap: 5mm;
+}
+
+.day-header {
+    display: grid;
+    grid-template-columns: 24mm 1fr;
+    align-items: center;
+    gap: 4mm;
+}
+
+.day-badge {
+    width: 24mm;
+    height: 24mm;
+    border-radius: 50%;
+    border: 1px solid var(--gold);
+    background: var(--panel);
+    color: var(--gold_dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.day-heading h2 {
+    margin: 0;
+    color: var(--gold_dark);
+    text-transform: uppercase;
+    font-size: 17px;
+}
+
+.day-heading p {
+    margin: 1.5mm 0 0;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.day-layout {
+    display: grid;
+    grid-template-columns: 1fr var(--day-image-width-mm);
+    gap: 6mm;
+    align-items: start;
+}
+
+.activities {
+    margin: 0;
+    padding-left: 5mm;
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.activities li {
+    margin-bottom: 2mm;
+}
+
+.day-image {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    padding: 2mm;
+}
+
+.day-image img {
+    width: 100%;
+    height: var(--day-image-height-mm);
+    object-fit: cover;
+    display: block;
+}
+
+.meta {
+    font-size: 11px;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    padding-top: 3mm;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4mm;
+}
+
+.list-page ul {
+    margin: 0;
+    padding-left: 5mm;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.list-page li {
+    margin-bottom: 2mm;
+}
+
+.hotel-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+}
+
+.hotel-table th,
+.hotel-table td {
+    border: 1px solid var(--line);
+    padding: 2.4mm;
+    text-align: left;
+    background: var(--panel);
+}
+
+.hotel-table th {
+    color: var(--gold_dark);
+    background: #e9ece8;
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+}
+
+.footnote {
+    margin-top: 7mm;
+    border-top: 1px solid var(--line);
+    padding-top: 3mm;
+    font-size: 10px;
+    color: var(--muted);
+    text-align: right;
+}
