@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     Container,
     Paper,
@@ -12,6 +12,7 @@ import {
     CircularProgress,
     Alert,
     IconButton,
+    Chip,
 } from '@mui/material';
 import FolderOpen from '@mui/icons-material/FolderOpen';
 import axios from 'axios';
@@ -31,6 +32,33 @@ const ItineraryTestPage = () => {
     const dayFileInputRefs = useRef({});
 
     const API_BASE_URL = 'http://localhost:8000/api/v1/test/itinerary';
+
+    // Load data from sessionStorage on mount
+    useEffect(() => {
+        const savedData = sessionStorage.getItem('vsl360_itinerary_testdata');
+        const savedTripName = sessionStorage.getItem('vsl360_itinerary_tripname');
+        const savedTemplate = sessionStorage.getItem('vsl360_itinerary_template');
+
+        if (savedData) {
+            try {
+                setTestData(JSON.parse(savedData));
+                if (savedTripName) setTripName(savedTripName);
+                if (savedTemplate) setTemplateName(savedTemplate);
+            } catch (err) {
+                console.error('Error loading saved data:', err);
+                sessionStorage.removeItem('vsl360_itinerary_testdata');
+            }
+        }
+    }, []); // Run only on mount
+
+    // Save data to sessionStorage whenever testData changes
+    useEffect(() => {
+        if (testData) {
+            sessionStorage.setItem('vsl360_itinerary_testdata', JSON.stringify(testData));
+            sessionStorage.setItem('vsl360_itinerary_tripname', tripName);
+            sessionStorage.setItem('vsl360_itinerary_template', templateName);
+        }
+    }, [testData, tripName, templateName]);
 
     const loadTemplates = async () => {
         try {
@@ -245,11 +273,17 @@ const ItineraryTestPage = () => {
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
-            <Paper sx={{ p: 3, mb: 3 }}>
-                <h1>🧪 Itinerary PDF Generator - Test Page</h1>
-                <p style={{ color: '#666', marginTop: '10px' }}>
-                    This is a separate testing environment. Changes here won't affect the main system.
-                </p>
+            <Paper sx={{ p: 4, mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', borderRadius: 2 }}>
+                <Box>
+                    <h1 style={{ margin: '0 0 8px 0', fontSize: '2rem', fontWeight: 'bold' }}>VSL360 Itinerary Generator</h1>
+                    <p style={{ margin: '0 0 12px 0', fontSize: '0.95rem', opacity: 0.9 }}>
+                        Create and customize beautiful travel itinerary PDFs with drag-and-drop day management and live template switching.
+                    </p>
+                    <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
+                        <Chip label="Template-based" size="small" variant="outlined" sx={{ color: 'white', borderColor: 'white' }} />
+                        <Chip label="Drag to Reorder" size="small" variant="outlined" sx={{ color: 'white', borderColor: 'white' }} />
+                    </Box>
+                </Box>
             </Paper>
 
             {error && (
@@ -332,24 +366,21 @@ const ItineraryTestPage = () => {
                                 InputLabelProps={{ shrink: true }}
                                 fullWidth
                             />
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                                <TextField
-                                    label="Cover Image Filename (Local)"
-                                    value={testData.cover_image_path || ''}
-                                    onChange={(e) => handleDataChange('cover_image_path', e.target.value)}
-                                    helperText="Or click browse button"
-                                    fullWidth
-                                    size="small"
-                                />
-                                <IconButton
-                                    onClick={() => handleBrowseImage('cover')}
-                                    color="primary"
-                                    title="Browse local images"
-                                    sx={{ flexShrink: 0 }}
-                                >
-                                    <FolderOpen />
-                                </IconButton>
-                            </Box>
+                            <Button
+                                variant="outlined"
+                                color="primary"
+                                size="small"
+                                fullWidth
+                                onClick={() => handleBrowseImage('cover')}
+                                startIcon={<FolderOpen />}
+                            >
+                                Select Cover Image
+                            </Button>
+                            {testData.cover_image_path && (
+                                <Box sx={{ mt: 1, p: 1, backgroundColor: '#e8f5e9', borderRadius: 1, fontSize: '0.85rem', color: '#2e7d32' }}>
+                                    ✓ {testData.cover_image_path}
+                                </Box>
+                            )}
                         </Box>
                     </Paper>
 
@@ -379,28 +410,38 @@ const ItineraryTestPage = () => {
                                         opacity: draggedDay === dayIndex ? 0.7 : 1
                                     }}
                                 >
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                    <h3>Day {day.day}: {day.city}</h3>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexGrow: 1 }}>
+                                        <Chip 
+                                            label={`Day ${day.day}`} 
+                                            color="primary" 
+                                            variant="outlined"
+                                            sx={{ fontWeight: 'bold', fontSize: '0.95rem' }}
+                                        />
+                                        <TextField
+                                            label="Day Title"
+                                            value={day.title}
+                                            onChange={(e) => {
+                                                const newData = { ...testData };
+                                                newData.days[dayIndex].title = e.target.value;
+                                                setTestData(newData);
+                                            }}
+                                            fullWidth
+                                            size="small"
+                                            sx={{ maxWidth: '300px' }}
+                                        />
+                                    </Box>
                                     <Button
                                         variant="outlined"
                                         color="error"
                                         size="small"
                                         onClick={() => handleRemoveDay(dayIndex)}
+                                        sx={{ flexShrink: 0 }}
                                     >
                                         Remove Day
                                     </Button>
                                 </Box>
                                 <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
-                                    <TextField
-                                        label="Day Title"
-                                        value={day.title}
-                                        onChange={(e) => {
-                                            const newData = { ...testData };
-                                            newData.days[dayIndex].title = e.target.value;
-                                            setTestData(newData);
-                                        }}
-                                        fullWidth
-                                    />
                                     <TextField
                                         label="City"
                                         value={day.city}
@@ -411,30 +452,22 @@ const ItineraryTestPage = () => {
                                         }}
                                         fullWidth
                                     />
-                                    <TextField
-                                        label="Day Image Filename (Local)"
-                                        value={day.image_path || ''}
-                                        onChange={(e) => {
-                                            const newData = { ...testData };
-                                            newData.days[dayIndex].image_path = e.target.value;
-                                            setTestData(newData);
-                                        }}
-                                        fullWidth
+                                    <Button
+                                        variant="outlined"
+                                        color="primary"
                                         size="small"
+                                        fullWidth
+                                        onClick={() => handleBrowseImage('day', dayIndex)}
+                                        startIcon={<FolderOpen />}
                                         sx={{ mb: 1 }}
-                                    />
-                                    <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                                        <Button
-                                            variant="outlined"
-                                            color="primary"
-                                            size="small"
-                                            fullWidth
-                                            onClick={() => handleBrowseImage('day', dayIndex)}
-                                            startIcon={<FolderOpen />}
-                                        >
-                                            Browse Image
-                                        </Button>
-                                    </Box>
+                                    >
+                                        Select Day Image
+                                    </Button>
+                                    {day.image_path && (
+                                        <Box sx={{ mb: 1, p: 1, backgroundColor: '#e8f5e9', borderRadius: 1, fontSize: '0.85rem', color: '#2e7d32' }}>
+                                            ✓ {day.image_path}
+                                        </Box>
+                                    )}
                                 </Box>
 
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
@@ -445,12 +478,14 @@ const ItineraryTestPage = () => {
                                 </Box>
                                 {day.activities.map((activity, actIndex) => (
                                     <Box key={actIndex} sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'flex-start' }}>
-                                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 1, flexGrow: 1 }}>
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 1, flexGrow: 1 }}>
                                             <TextField
                                                 label="Time"
+                                                type="time"
                                                 value={activity.time}
                                                 onChange={(e) => handleActivityChange(dayIndex, actIndex, 'time', e.target.value)}
                                                 size="small"
+                                                InputLabelProps={{ shrink: true }}
                                             />
                                             <TextField
                                                 label="Description"
@@ -537,6 +572,11 @@ const ItineraryTestPage = () => {
                             onClick={() => {
                                 setTestData(null);
                                 setTripName('');
+                                setTemplateName('elegant_classic');
+                                // Clear sessionStorage
+                                sessionStorage.removeItem('vsl360_itinerary_testdata');
+                                sessionStorage.removeItem('vsl360_itinerary_tripname');
+                                sessionStorage.removeItem('vsl360_itinerary_template');
                             }}
                             disabled={loading}
                         >
