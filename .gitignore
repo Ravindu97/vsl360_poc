@@ -37,3 +37,7 @@ frontend/.pnpm-debug.log*
 # Logs
 *.log
 logs/
+
+
+# sample itinerary
+sample_itinerary/

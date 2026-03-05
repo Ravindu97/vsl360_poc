@@ -898,5 +898,9 @@ async def emergency_numbers(request: EmergencyNumberRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Include the itinerary test routes (separate test endpoints)
+from itinerary_routes import router as itinerary_router
+app.include_router(itinerary_router)
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

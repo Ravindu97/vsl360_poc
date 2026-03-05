@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, Box } from '@mui/material';
 import UserInfo from './components/UserInfo';
@@ -15,6 +16,7 @@ import CustomStepper from './components/Stepper';
 import Chatbot from './components/Chatbot';
 import VirtualDoctor from './components/VirtualDoctor';
 import Emergency from './components/Emergency';
+import ItineraryTestPage from './pages/ItineraryTestPage';
 
 const theme = createTheme({
   palette: {
@@ -100,19 +102,25 @@ function App() {
     }
   };
 
-  return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Box sx={{ display: 'flex' }}>
-        <CustomStepper steps={steps} currentStep={currentStep} onStepClick={goToStep} />
-        <Box sx={{ flexGrow: 1, ml: '220px', p: 4 }}>
-          {renderStep()}
-        </Box>
+  const MainApp = () => (
+    <Box sx={{ display: 'flex' }}>
+      <CustomStepper steps={steps} currentStep={currentStep} onStepClick={goToStep} />
+      <Box sx={{ flexGrow: 1, ml: '220px', p: 4 }}>
+        {renderStep()}
       </Box>
-      <Chatbot />
-      <VirtualDoctor />
-      <Emergency />
-    </ThemeProvider>
+    </Box>
+  );
+
+  return (
+    <Router>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Routes>
+          <Route path="/" element={<><MainApp /><Chatbot /><VirtualDoctor /><Emergency /></>} />
+          <Route path="/test/itinerary-generator" element={<ItineraryTestPage />} />
+        </Routes>
+      </ThemeProvider>
+    </Router>
   );
 }
 
