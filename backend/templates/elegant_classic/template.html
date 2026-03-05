@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ trip_name }}</title>
+    <style>
+        :root {
+            {{ css_variables|safe }}
+        }
+        {{ css_text|safe }}
+    </style>
+</head>
+<body>
+    <section class="page cover">
+        <div class="brand">VSL 360 - Personalized Travel Itinerary</div>
+
+        <div class="cover-title">
+            <h1>{{ trip_name }}</h1>
+            <p>{{ start_date }} to {{ end_date }}{% if customer_name %} | Prepared for {{ customer_name }}{% endif %}</p>
+        </div>
+
+        <div class="cover-image-wrap">
+            {% if cover_image_data_uri %}
+            <img src="{{ cover_image_data_uri }}" alt="Cover image" />
+            {% endif %}
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-item">
+                <div class="label">Destination</div>
+                <div class="value">{{ destination_country }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Duration</div>
+                <div class="value">{{ total_days }} Days</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Nights</div>
+                <div class="value">{{ total_nights }} Nights</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="page">
+        <h2 class="section-title">Trip Overview</h2>
+        <div class="overview">{{ overview_text }}</div>
+
+        {% if location_summary and location_summary|length > 0 %}
+        <h2 class="section-title">Location Summary</h2>
+        <ul class="location-summary">
+            {% for item in location_summary %}
+            <li>{{ item.city }} - {{ item.nights }} night{% if item.nights != 1 %}s{% endif %}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        <div class="footnote">Generated on {{ generation_date }}</div>
+    </section>
+
+    {% for day in days %}
+    <section class="page day-page">
+        <div class="day-header">
+            <div class="day-badge">Day {{ day.day }}</div>
+            <div class="day-heading">
+                <h2>{{ day.title }}</h2>
+                <p>{{ day.city }}</p>
+            </div>
+        </div>
+
+        <div class="day-layout">
+            <ol class="activities">
+                {% for activity in day.activities %}
+                <li>
+                    {% if activity.time %}<strong>{{ activity.time }}</strong> - {% endif %}{{ activity.description }}
+                </li>
+                {% endfor %}
+            </ol>
+
+            <div class="day-image">
+                {% if day.image_data_uri %}
+                <img src="{{ day.image_data_uri }}" alt="Day {{ day.day }}" />
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="meta">
+            <div><strong>Travel Time:</strong> {{ day.travel_time or "N/A" }}</div>
+            <div><strong>Distance:</strong> {{ day.distance or "N/A" }}</div>
+            <div><strong>Overnight:</strong> {{ day.overnight_city or day.city }}</div>
+        </div>
+
+        {% if day.optional %}
+        <div style="font-size: 11px; color: var(--muted);"><strong>Optional:</strong> {{ day.optional }}</div>
+        {% endif %}
+    </section>
+    {% endfor %}
+
+    {% if hotels and hotels|length > 0 %}
+    <section class="page list-page">
+        <h2 class="section-title">Accommodation Plan</h2>
+        <table class="hotel-table">
+            <thead>
+                <tr>
+                    <th>Night</th>
+                    <th>Hotel</th>
+                    <th>City</th>
+                    <th>Room Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hotel in hotels %}
+                <tr>
+                    <td>{{ hotel.night }}</td>
+                    <td>{{ hotel.name }}</td>
+                    <td>{{ hotel.city }}</td>
+                    <td>{{ hotel.room_type }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endif %}
+
+    <section class="page list-page">
+        <h2 class="section-title">Inclusions</h2>
+        <ul>
+            {% for item in tour_includes %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+        <h2 class="section-title" style="margin-top: 7mm;">Exclusions</h2>
+        <ul>
+            {% for item in tour_excludes %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+        {% if cost_per_person %}
+        <h2 class="section-title" style="margin-top: 7mm;">Cost Per Person</h2>
+        <p style="font-size: 14px; color: var(--gold_dark); font-weight: 700;">{{ cost_per_person }}</p>
+        {% endif %}
+    </section>
+
+    <section class="page list-page">
+        <h2 class="section-title">Payment Terms</h2>
+        <ul>
+            {% for item in payment_info %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+        <h2 class="section-title" style="margin-top: 7mm;">Cancellation Policy</h2>
+        <ul>
+            {% for item in cancellation_policy %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+</body>
+</html>

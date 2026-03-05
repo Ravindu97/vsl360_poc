@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 import os
-from itinerary_generator_playwright import generate_vsl360_itinerary_pdf_playwright
+from itinerary_generator_playwright import generate_vsl360_itinerary_pdf_playwright, list_template_presets
 
 router = APIRouter(
     prefix="/api/v1/test/itinerary",
@@ -37,6 +37,7 @@ class DaySchema(BaseModel):
     optional: Optional[str] = None
 
 class ItineraryRequestSchema(BaseModel):
+    template_name: Optional[str] = "elegant_classic"
     customer_name: Optional[str] = None
     trip_name: str
     destination_country: str
@@ -149,6 +150,7 @@ def get_test_data():
     TEST ENDPOINT: Get sample itinerary data in VSL 360 format
     """
     return {
+        "template_name": "elegant_classic",
         "customer_name": "Mr. Shery Jain",
         "trip_name": "8 Days Tour in Sri Lanka",
         "destination_country": "Sri Lanka",
@@ -399,3 +401,11 @@ def get_local_images():
             files.append(name)
 
     return {"images": files, "images_dir": images_dir}
+
+
+@router.get("/templates")
+def get_templates():
+    """
+    TEST ENDPOINT: List available PDF template presets and tunable defaults.
+    """
+    return list_template_presets()

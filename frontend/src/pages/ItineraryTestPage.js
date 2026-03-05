@@ -1,33 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     Container,
     Paper,
     TextField,
     Button,
     Box,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
     CircularProgress,
     Alert,
+    IconButton,
 } from '@mui/material';
+import FolderOpen from '@mui/icons-material/FolderOpen';
 import axios from 'axios';
 
 const ItineraryTestPage = () => {
     const [testData, setTestData] = useState(null);
-    const [localImages, setLocalImages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
     const [tripName, setTripName] = useState('');
+    const [templateOptions, setTemplateOptions] = useState([]);
+    const [templateName, setTemplateName] = useState('elegant_classic');
+    const [draggedDay, setDraggedDay] = useState(null);
+
+    // File input refs for image browsing
+    const coverFileInputRef = useRef(null);
+    const dayFileInputRefs = useRef({});
 
     const API_BASE_URL = 'http://localhost:8000/api/v1/test/itinerary';
 
-    const loadLocalImages = async () => {
+    const loadTemplates = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/local-images`);
-            setLocalImages(response.data.images || []);
+            const response = await axios.get(`${API_BASE_URL}/templates`);
+            const options = response.data.templates || [];
+            setTemplateOptions(options);
+            const selected = (testData && testData.template_name) || response.data.default || 'elegant_classic';
+            setTemplateName(selected);
         } catch (err) {
-            // Keep UI usable even if listing images fails.
-            setLocalImages([]);
+            setTemplateOptions([]);
         }
+    };
+
+    // Normalize day object to ensure all fields are defined (not null/undefined)
+    const normalizeDayData = (day) => {
+        return {
+            day: day.day || 1,
+            title: day.title || '',
+            city: day.city || '',
+            image_path: day.image_path || '',
+            image_url: day.image_url || '',
+            activities: (day.activities || []).map(act => ({
+                time: act.time || '',
+                description: act.description || ''
+            })),
+            travel_time: day.travel_time || '',
+            distance: day.distance || '',
+            overnight_city: day.overnight_city || '',
+            optional: day.optional || '',
+            hotel: day.hotel || undefined
+        };
     };
 
     // Load test data
@@ -36,9 +70,14 @@ const ItineraryTestPage = () => {
             setLoading(true);
             setError(null);
             const response = await axios.get(`${API_BASE_URL}/test-data`);
-            setTestData(response.data);
+            const normalizedData = {
+                ...response.data,
+                days: (response.data.days || []).map(normalizeDayData)
+            };
+            setTestData(normalizedData);
             setTripName(response.data.trip_name);
-            await loadLocalImages();
+            setTemplateName(response.data.template_name || 'elegant_classic');
+            await loadTemplates();
         } catch (err) {
             setError('Failed to load test data: ' + err.message);
         } finally {
@@ -51,9 +90,14 @@ const ItineraryTestPage = () => {
         try {
             setLoading(true);
             setError(null);
+
+            const payload = {
+                ...(testData || {}),
+                template_name: templateName,
+            };
             const response = await axios.post(
                 `${API_BASE_URL}/generate-pdf`,
-                testData || {},
+                payload,
                 { responseType: 'blob' }
             );
 
@@ -76,24 +120,8 @@ const ItineraryTestPage = () => {
         }
     };
 
-    // Save PDF to server
-    const handleSavePDF = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const response = await axios.post(
-                `${API_BASE_URL}/save-pdf`,
-                testData || {}
-            );
-
-            setSuccess(`PDF saved successfully! Location: ${response.data.file_path}`);
-            setTimeout(() => setSuccess(null), 5000);
-        } catch (err) {
-            setError('Failed to save PDF: ' + err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Save PDF to server - REMOVED
+    // Functionality removed as per user request
 
     // Update trip data in state
     const handleDataChange = (field, value) => {
@@ -108,6 +136,111 @@ const ItineraryTestPage = () => {
         const newData = { ...testData };
         newData.days[dayIndex].activities[activityIndex][field] = value;
         setTestData(newData);
+    };
+
+    // Add a new day at specific position
+    const handleAddDay = (position = null) => {
+        const insertIndex = position !== null ? position : testData.days.length;
+        const newDay = normalizeDayData({
+            day: insertIndex + 1,
+            title: `Day ${insertIndex + 1}`,
+            city: '',
+            image_path: '',
+            image_url: '',
+            activities: [{ time: '', description: '' }],
+            travel_time: '',
+            distance: '',
+            overnight_city: '',
+            optional: ''
+        });
+        const newData = { ...testData };
+        newData.days.splice(insertIndex, 0, newDay);
+        // Renumber all days
+        newData.days.forEach((day, idx) => {
+            day.day = idx + 1;
+        });
+        newData.total_days = newData.days.length;
+        setTestData(newData);
+    };
+
+    // Remove a day
+    const handleRemoveDay = (dayIndex) => {
+        const newData = { ...testData };
+        newData.days.splice(dayIndex, 1);
+        // Renumber days
+        newData.days.forEach((day, idx) => {
+            day.day = idx + 1;
+        });
+        newData.total_days = newData.days.length;
+        setTestData(newData);
+    };
+
+    // Add an activity to a day
+    const handleAddActivity = (dayIndex) => {
+        const newData = { ...testData };
+        newData.days[dayIndex].activities.push({ time: '', description: '' });
+        setTestData(newData);
+    };
+
+    // Remove an activity from a day
+    const handleRemoveActivity = (dayIndex, activityIndex) => {
+        const newData = { ...testData };
+        newData.days[dayIndex].activities.splice(activityIndex, 1);
+        setTestData(newData);
+    };
+
+    // File handling for image browsing
+    const handleBrowseImage = (fieldType, dayIndex = null) => {
+        if (fieldType === 'cover') {
+            coverFileInputRef.current?.click();
+        } else if (fieldType === 'day') {
+            dayFileInputRefs.current[dayIndex]?.click();
+        }
+    };
+
+    const handleFileSelect = (e, fieldType, dayIndex = null) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const filename = file.name;
+            if (fieldType === 'cover') {
+                handleDataChange('cover_image_path', filename);
+            } else if (fieldType === 'day') {
+                const newData = { ...testData };
+                newData.days[dayIndex].image_path = filename;
+                setTestData(newData);
+            }
+        }
+        // Reset file input for reuse
+        e.target.value = '';
+    };
+
+    // Drag and drop handlers for day reordering
+    const handleDragStart = (dayIndex) => {
+        setDraggedDay(dayIndex);
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+    };
+
+    const handleDrop = (targetIndex) => {
+        if (draggedDay === null || draggedDay === targetIndex) {
+            setDraggedDay(null);
+            return;
+        }
+
+        const newData = { ...testData };
+        const draggedDayObj = newData.days[draggedDay];
+        newData.days.splice(draggedDay, 1);
+        newData.days.splice(targetIndex, 0, draggedDayObj);
+
+        // Renumber all days
+        newData.days.forEach((day, idx) => {
+            day.day = idx + 1;
+        });
+
+        setTestData(newData);
+        setDraggedDay(null);
     };
 
     return (
@@ -147,7 +280,25 @@ const ItineraryTestPage = () => {
                     {/* Trip Info Section */}
                     <Paper sx={{ p: 3, mb: 3 }}>
                         <h2>Trip Information</h2>
-                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
+                            <FormControl fullWidth>
+                                <InputLabel id="template-label">Template</InputLabel>
+                                <Select
+                                    labelId="template-label"
+                                    label="Template"
+                                    value={templateName}
+                                    onChange={(e) => {
+                                        setTemplateName(e.target.value);
+                                        handleDataChange('template_name', e.target.value);
+                                    }}
+                                >
+                                    {(templateOptions.length ? templateOptions : [{ id: 'elegant_classic', label: 'Elegant Classic' }]).map((item) => (
+                                        <MenuItem key={item.id} value={item.id}>
+                                            {item.label || item.id}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
                             <TextField
                                 label="Trip Name"
                                 value={tripName}
@@ -157,6 +308,8 @@ const ItineraryTestPage = () => {
                                 }}
                                 fullWidth
                             />
+                        </Box>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                             <TextField
                                 label="Destination Country"
                                 value={testData.destination_country}
@@ -179,50 +332,64 @@ const ItineraryTestPage = () => {
                                 InputLabelProps={{ shrink: true }}
                                 fullWidth
                             />
-                            <TextField
-                                label="Cover Image Filename (Local)"
-                                value={testData.cover_image_path || ''}
-                                onChange={(e) => handleDataChange('cover_image_path', e.target.value)}
-                                helperText="Use a filename from sample_itinerary/images"
-                                fullWidth
-                            />
-                            <TextField
-                                label="Cover Image URL (Optional Fallback)"
-                                value={testData.cover_image_url || ''}
-                                onChange={(e) => handleDataChange('cover_image_url', e.target.value)}
-                                fullWidth
-                            />
-                        </Box>
-                        {localImages.length > 0 && (
-                            <Box sx={{ mt: 2, p: 2, backgroundColor: '#f3f5f7', borderRadius: 1 }}>
-                                <strong>Available Local Images</strong>
-                                <p style={{ marginTop: 8, marginBottom: 0, color: '#555' }}>
-                                    Copy any filename below into cover/day image fields.
-                                </p>
-                                <Box sx={{ mt: 1, maxHeight: 140, overflow: 'auto', fontSize: 13 }}>
-                                    {localImages.map((name) => (
-                                        <div key={name}>{name}</div>
-                                    ))}
-                                </Box>
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                <TextField
+                                    label="Cover Image Filename (Local)"
+                                    value={testData.cover_image_path || ''}
+                                    onChange={(e) => handleDataChange('cover_image_path', e.target.value)}
+                                    helperText="Or click browse button"
+                                    fullWidth
+                                    size="small"
+                                />
+                                <IconButton
+                                    onClick={() => handleBrowseImage('cover')}
+                                    color="primary"
+                                    title="Browse local images"
+                                    sx={{ flexShrink: 0 }}
+                                >
+                                    <FolderOpen />
+                                </IconButton>
                             </Box>
-                        )}
+                        </Box>
                     </Paper>
 
                     {/* Days Section */}
                     <Paper sx={{ p: 3, mb: 3 }}>
-                        <h2>Itinerary Days</h2>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <h2>Itinerary Days</h2>
+                            <Button variant="contained" color="success" onClick={handleAddDay}>
+                                + Add Day
+                            </Button>
+                        </Box>
                         {testData.days.map((day, dayIndex) => (
-                            <Box
-                                key={dayIndex}
-                                sx={{
-                                    mb: 3,
-                                    p: 2,
-                                    border: '1px solid #ddd',
-                                    borderRadius: '8px',
-                                    backgroundColor: '#f9f9f9'
-                                }}
-                            >
-                                <h3>Day {day.day}: {day.city}</h3>
+                            <React.Fragment key={dayIndex}>
+                                <Box
+                                    draggable
+                                    onDragStart={() => handleDragStart(dayIndex)}
+                                    onDragOver={handleDragOver}
+                                    onDrop={() => handleDrop(dayIndex)}
+                                    sx={{
+                                        mb: 3,
+                                        p: 2,
+                                        border: draggedDay === dayIndex ? '3px solid #1976d2' : '1px solid #ddd',
+                                        borderRadius: '8px',
+                                        backgroundColor: draggedDay === dayIndex ? '#e8f4ff' : '#f9f9f9',
+                                        cursor: 'move',
+                                        transition: 'all 0.2s ease',
+                                        opacity: draggedDay === dayIndex ? 0.7 : 1
+                                    }}
+                                >
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                    <h3>Day {day.day}: {day.city}</h3>
+                                    <Button
+                                        variant="outlined"
+                                        color="error"
+                                        size="small"
+                                        onClick={() => handleRemoveDay(dayIndex)}
+                                    >
+                                        Remove Day
+                                    </Button>
+                                </Box>
                                 <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
                                     <TextField
                                         label="Day Title"
@@ -252,38 +419,57 @@ const ItineraryTestPage = () => {
                                             newData.days[dayIndex].image_path = e.target.value;
                                             setTestData(newData);
                                         }}
-                                        helperText="Filename from sample_itinerary/images"
                                         fullWidth
+                                        size="small"
+                                        sx={{ mb: 1 }}
                                     />
-                                    <TextField
-                                        label="Day Image URL (Optional)"
-                                        value={day.image_url || ''}
-                                        onChange={(e) => {
-                                            const newData = { ...testData };
-                                            newData.days[dayIndex].image_url = e.target.value;
-                                            setTestData(newData);
-                                        }}
-                                        fullWidth
-                                    />
+                                    <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                                        <Button
+                                            variant="outlined"
+                                            color="primary"
+                                            size="small"
+                                            fullWidth
+                                            onClick={() => handleBrowseImage('day', dayIndex)}
+                                            startIcon={<FolderOpen />}
+                                        >
+                                            Browse Image
+                                        </Button>
+                                    </Box>
                                 </Box>
 
-                                <h4>Activities</h4>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                    <h4>Activities</h4>
+                                    <Button variant="outlined" color="primary" size="small" onClick={() => handleAddActivity(dayIndex)}>
+                                        + Add Activity
+                                    </Button>
+                                </Box>
                                 {day.activities.map((activity, actIndex) => (
-                                    <Box key={actIndex} sx={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 1, mb: 1 }}>
-                                        <TextField
-                                            label="Time"
-                                            value={activity.time}
-                                            onChange={(e) => handleActivityChange(dayIndex, actIndex, 'time', e.target.value)}
+                                    <Box key={actIndex} sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'flex-start' }}>
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 1, flexGrow: 1 }}>
+                                            <TextField
+                                                label="Time"
+                                                value={activity.time}
+                                                onChange={(e) => handleActivityChange(dayIndex, actIndex, 'time', e.target.value)}
+                                                size="small"
+                                            />
+                                            <TextField
+                                                label="Description"
+                                                value={activity.description}
+                                                onChange={(e) => handleActivityChange(dayIndex, actIndex, 'description', e.target.value)}
+                                                multiline
+                                                rows={2}
+                                                size="small"
+                                            />
+                                        </Box>
+                                        <Button
+                                            variant="outlined"
+                                            color="error"
                                             size="small"
-                                        />
-                                        <TextField
-                                            label="Description"
-                                            value={activity.description}
-                                            onChange={(e) => handleActivityChange(dayIndex, actIndex, 'description', e.target.value)}
-                                            multiline
-                                            rows={2}
-                                            size="small"
-                                        />
+                                            onClick={() => handleRemoveActivity(dayIndex, actIndex)}
+                                            sx={{ mt: 0.5 }}
+                                        >
+                                            ✕
+                                        </Button>
                                     </Box>
                                 ))}
 
@@ -317,7 +503,20 @@ const ItineraryTestPage = () => {
                                         />
                                     </Box>
                                 )}
-                            </Box>
+                                </Box>
+                                {dayIndex < testData.days.length - 1 && (
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
+                                        <Button
+                                            variant="text"
+                                            size="small"
+                                            onClick={() => handleAddDay(dayIndex + 1)}
+                                            sx={{ textTransform: 'none', color: '#999' }}
+                                        >
+                                            + Insert day after
+                                        </Button>
+                                    </Box>
+                                )}
+                            </React.Fragment>
                         ))}
                     </Paper>
 
@@ -333,15 +532,6 @@ const ItineraryTestPage = () => {
                             {loading ? <CircularProgress size={24} /> : '📥 Download PDF'}
                         </Button>
                         <Button
-                            variant="contained"
-                            color="success"
-                            size="large"
-                            onClick={handleSavePDF}
-                            disabled={loading}
-                        >
-                            {loading ? <CircularProgress size={24} /> : '💾 Save PDF to Server'}
-                        </Button>
-                        <Button
                             variant="outlined"
                             size="large"
                             onClick={() => {
@@ -355,6 +545,27 @@ const ItineraryTestPage = () => {
                     </Paper>
                 </>
             )}
+            
+            {/* Hidden file inputs for image browsing */}
+            <input
+                ref={coverFileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => handleFileSelect(e, 'cover')}
+            />
+            {testData && testData.days.map((_, dayIndex) => (
+                <input
+                    key={`day-file-${dayIndex}`}
+                    ref={(el) => {
+                        if (el) dayFileInputRefs.current[dayIndex] = el;
+                    }}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => handleFileSelect(e, 'day', dayIndex)}
+                />
+            ))}
         </Container>
     );
 };
