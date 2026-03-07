@@ -51,12 +51,30 @@ const ItineraryTestPage = () => {
         }
     }, []); // Run only on mount
 
-    // Save data to sessionStorage whenever testData changes
+    // Save data to sessionStorage whenever testData changes (strip large image blobs to avoid quota errors)
     useEffect(() => {
         if (testData) {
-            sessionStorage.setItem('vsl360_itinerary_testdata', JSON.stringify(testData));
-            sessionStorage.setItem('vsl360_itinerary_tripname', tripName);
-            sessionStorage.setItem('vsl360_itinerary_template', templateName);
+            try {
+                const stripImages = (data) => {
+                    const clone = JSON.parse(JSON.stringify(data));
+                    // Remove base64 image data that bloats storage
+                    if (clone.cover_image && clone.cover_image.startsWith('data:')) {
+                        clone.cover_image = '';
+                    }
+                    if (Array.isArray(clone.days)) {
+                        clone.days.forEach(d => {
+                            if (d.image_url && d.image_url.startsWith('data:')) d.image_url = '';
+                            if (d.image_path && d.image_path.startsWith('data:')) d.image_path = '';
+                        });
+                    }
+                    return clone;
+                };
+                sessionStorage.setItem('vsl360_itinerary_testdata', JSON.stringify(stripImages(testData)));
+                sessionStorage.setItem('vsl360_itinerary_tripname', tripName);
+                sessionStorage.setItem('vsl360_itinerary_template', templateName);
+            } catch (e) {
+                console.warn('Could not save to sessionStorage:', e.message);
+            }
         }
     }, [testData, tripName, templateName]);
 

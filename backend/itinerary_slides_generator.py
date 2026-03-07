@@ -467,12 +467,12 @@ def _add_day_slide(prs, day, idx, t):
           RGBColor(255, 255, 255), True, PP_ALIGN.CENTER, font=t["serif"],
           anchor=MSO_ANCHOR.MIDDLE)
 
-    _text(slide, "DAY", content_x + 0.72, 0.7, 0.5, 0.24, 10,
+    _text(slide, "DAY", content_x + 0.72, 0.68, 0.5, 0.22, 9,
           t["muted"], True, font=t["sans"])
     city = day.get("city", "")
     if city:
-        _text(slide, city.upper(), content_x + 0.72, 0.94, content_w - 0.72,
-              0.26, 11, t["accent_dark"], True, font=t["sans"])
+        _text(slide, city.upper(), content_x + 0.72, 0.92, content_w - 0.72,
+              0.30, 13, t["accent_dark"], True, font=t["sans"])
 
     # Title
     _text(slide, day.get("title", "Untitled Day"), content_x, 1.5, content_w,
