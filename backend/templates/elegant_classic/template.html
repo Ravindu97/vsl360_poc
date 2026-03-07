@@ -12,34 +12,42 @@
     </style>
 </head>
 <body>
-    <section class="page cover">
-        <div class="brand">VSL 360 - Personalized Travel Itinerary</div>
+    <section class="page cover" style="background-image: url('{{ cover_image_data_uri }}'); background-size: cover; background-position: center;">
+        <div class="brand">VSL 360<br/><span style="font-size: 8px; letter-spacing: 1px;">EXPLORE EVERY ANGLE</span></div>
 
         <div class="cover-title">
             <h1>{{ trip_name }}</h1>
-            <p>{{ start_date }} to {{ end_date }}{% if customer_name %} | Prepared for {{ customer_name }}{% endif %}</p>
         </div>
 
-        <div class="cover-image-wrap">
-            {% if cover_image_data_uri %}
-            <img src="{{ cover_image_data_uri }}" alt="Cover image" />
-            {% endif %}
+        <div class="duration-badge">
+            {{ total_nights }} NIGHTS<br/>
+            {{ total_days }} DAYS
         </div>
 
-        <div class="summary-grid">
-            <div class="summary-item">
-                <div class="label">Destination</div>
-                <div class="value">{{ destination_country }}</div>
-            </div>
-            <div class="summary-item">
-                <div class="label">Duration</div>
-                <div class="value">{{ total_days }} Days</div>
-            </div>
-            <div class="summary-item">
-                <div class="label">Nights</div>
-                <div class="value">{{ total_nights }} Nights</div>
-            </div>
+        <div class="locations-bar">
+            {% for day in days %}
+            <div class="location-item">{{ day.day }}N {{ day.city }}</div>
+            {% endfor %}
         </div>
+
+        <div class="features-bottom">
+            <div class="feature-icon">🏨</div>
+            <div class="feature-icon">🎯</div>
+            <div class="feature-icon">🚗</div>
+            <div class="feature-icon">✈️</div>
+            <div class="feature-icon">🍽️</div>
+        </div>
+
+        <div class="feature-icon-label">
+            <div class="feature-label">Hotels</div>
+            <div class="feature-label">{{ days|length }} Activities</div>
+            <div class="feature-label">Transfers</div>
+            <div class="feature-label">Airport<br/>Transfers</div>
+            <div class="feature-label">Selected<br/>Meals</div>
+        </div>
+
+        <div class="cover-image-wrap"></div>
+        <div class="summary-grid"></div>
     </section>
 
     <section class="page">

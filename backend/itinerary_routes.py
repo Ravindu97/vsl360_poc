@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
 import os
 from itinerary_generator_playwright import generate_vsl360_itinerary_pdf_playwright, list_template_presets
+from itinerary_slides_generator import generate_vsl360_itinerary_slides
 
 router = APIRouter(
     prefix="/api/v1/test/itinerary",
@@ -77,6 +78,49 @@ def generate_itinerary(request: ItineraryRequestSchema):
         raise HTTPException(
             status_code=500, 
             detail=f"Error generating PDF: {str(e)}"
+        )
+
+
+@router.post("/generate-slides")
+def generate_itinerary_slides(request: ItineraryRequestSchema):
+    """
+    Generate and download a branded PPTX slide deck from itinerary details.
+    """
+    try:
+        trip_data = request.dict()
+        pptx_path = generate_vsl360_itinerary_slides(trip_data)
+
+        return FileResponse(
+            pptx_path,
+            media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            filename=f"{request.trip_name}.pptx",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating slides: {str(e)}",
+        )
+
+
+@router.post("/generate-slides-canva")
+def generate_itinerary_slides_canva(request: ItineraryRequestSchema):
+    """
+    Generate and download a Canva-editable PPTX deck.
+    This uses PPTX output so users can import and manually adjust inside Canva.
+    """
+    try:
+        trip_data = request.dict()
+        pptx_path = generate_vsl360_itinerary_slides(trip_data)
+
+        return FileResponse(
+            pptx_path,
+            media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            filename=f"{request.trip_name}_canva_editable.pptx",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating Canva PPTX: {str(e)}",
         )
 
 @router.post("/save-pdf")

@@ -78,7 +78,8 @@ const ItineraryTestPage = () => {
             day: day.day || 1,
             title: day.title || '',
             city: day.city || '',
-            image_path: day.image_path || '',
+            image_path: day.image_path || '', // Now stores data URI
+            image_filename: day.image_filename || '', // Display name only
             image_url: day.image_url || '',
             activities: (day.activities || []).map(act => ({
                 time: act.time || '',
@@ -113,8 +114,8 @@ const ItineraryTestPage = () => {
         }
     };
 
-    // Generate and download PDF
-    const handleDownloadPDF = async () => {
+    // Generate and download PPTX slides
+    const handleDownloadSlides = async () => {
         try {
             setLoading(true);
             setError(null);
@@ -124,25 +125,24 @@ const ItineraryTestPage = () => {
                 template_name: templateName,
             };
             const response = await axios.post(
-                `${API_BASE_URL}/generate-pdf`,
+                `${API_BASE_URL}/generate-slides-canva`,
                 payload,
                 { responseType: 'blob' }
             );
 
-            // Create download link
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `${tripName || 'itinerary'}.pdf`);
+            link.setAttribute('download', `${tripName || 'itinerary'}.pptx`);
             document.body.appendChild(link);
             link.click();
             link.parentNode.removeChild(link);
             window.URL.revokeObjectURL(url);
 
-            setSuccess('PDF downloaded successfully!');
+            setSuccess('Slides downloaded successfully!');
             setTimeout(() => setSuccess(null), 3000);
         } catch (err) {
-            setError('Failed to generate PDF: ' + err.message);
+            setError('Failed to generate slides: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -230,13 +230,20 @@ const ItineraryTestPage = () => {
         const file = e.target.files?.[0];
         if (file) {
             const filename = file.name;
-            if (fieldType === 'cover') {
-                handleDataChange('cover_image_path', filename);
-            } else if (fieldType === 'day') {
-                const newData = { ...testData };
-                newData.days[dayIndex].image_path = filename;
-                setTestData(newData);
-            }
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const dataUri = event.target.result; // Base64 encoded data URI
+                if (fieldType === 'cover') {
+                    handleDataChange('cover_image_path', dataUri);
+                    handleDataChange('cover_image_filename', filename);
+                } else if (fieldType === 'day') {
+                    const newData = { ...testData };
+                    newData.days[dayIndex].image_path = dataUri;
+                    newData.days[dayIndex].image_filename = filename;
+                    setTestData(newData);
+                }
+            };
+            reader.readAsDataURL(file);
         }
         // Reset file input for reuse
         e.target.value = '';
@@ -277,11 +284,12 @@ const ItineraryTestPage = () => {
                 <Box>
                     <h1 style={{ margin: '0 0 8px 0', fontSize: '2rem', fontWeight: 'bold' }}>VSL360 Itinerary Generator</h1>
                     <p style={{ margin: '0 0 12px 0', fontSize: '0.95rem', opacity: 0.9 }}>
-                        Create and customize beautiful travel itinerary PDFs with drag-and-drop day management and live template switching.
+                        Create and customize beautiful travel itinerary PDFs with auto-generated images, drag-and-drop day management, and live template switching.
                     </p>
                     <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
                         <Chip label="Template-based" size="small" variant="outlined" sx={{ color: 'white', borderColor: 'white' }} />
                         <Chip label="Drag to Reorder" size="small" variant="outlined" sx={{ color: 'white', borderColor: 'white' }} />
+                        <Chip label="Auto Images" size="small" variant="outlined" sx={{ color: 'white', borderColor: 'white' }} />
                     </Box>
                 </Box>
             </Paper>
@@ -374,11 +382,16 @@ const ItineraryTestPage = () => {
                                 onClick={() => handleBrowseImage('cover')}
                                 startIcon={<FolderOpen />}
                             >
-                                Select Cover Image
+                                📸 Select Cover Image (Optional)
                             </Button>
                             {testData.cover_image_path && (
-                                <Box sx={{ mt: 1, p: 1, backgroundColor: '#e8f5e9', borderRadius: 1, fontSize: '0.85rem', color: '#2e7d32' }}>
-                                    ✓ {testData.cover_image_path}
+                                <Box sx={{ mt: 1, p: 1, backgroundColor: '#e8f5e9', borderRadius: 1, fontSize: '0.85rem', color: '#2e7d32', gridColumn: '1 / -1' }}>
+                                    ✓ {testData.cover_image_filename || 'Cover image selected'}
+                                </Box>
+                            )}
+                            {!testData.cover_image_path && (
+                                <Box sx={{ mt: 1, p: 1, backgroundColor: '#e3f2fd', borderRadius: 1, fontSize: '0.85rem', color: '#1565c0', gridColumn: '1 / -1' }}>
+                                    ℹ️ Auto-generated cover image will be created from trip name
                                 </Box>
                             )}
                         </Box>
@@ -461,11 +474,16 @@ const ItineraryTestPage = () => {
                                         startIcon={<FolderOpen />}
                                         sx={{ mb: 1 }}
                                     >
-                                        Select Day Image
+                                        📸 Day Image (Optional)
                                     </Button>
                                     {day.image_path && (
-                                        <Box sx={{ mb: 1, p: 1, backgroundColor: '#e8f5e9', borderRadius: 1, fontSize: '0.85rem', color: '#2e7d32' }}>
-                                            ✓ {day.image_path}
+                                        <Box sx={{ mb: 1, p: 1, backgroundColor: '#e8f5e9', borderRadius: 1, fontSize: '0.85rem', color: '#2e7d32', gridColumn: '1 / -1' }}>
+                                            ✓ {day.image_filename || 'Day image selected'}
+                                        </Box>
+                                    )}
+                                    {!day.image_path && (
+                                        <Box sx={{ mb: 1, p: 1, backgroundColor: '#e3f2fd', borderRadius: 1, fontSize: '0.85rem', color: '#1565c0', gridColumn: '1 / -1' }}>
+                                            ℹ️ Auto-generated from "{day.city || 'location'}"
                                         </Box>
                                     )}
                                 </Box>
@@ -561,10 +579,10 @@ const ItineraryTestPage = () => {
                             variant="contained"
                             color="primary"
                             size="large"
-                            onClick={handleDownloadPDF}
+                            onClick={handleDownloadSlides}
                             disabled={loading}
                         >
-                            {loading ? <CircularProgress size={24} /> : '📥 Download PDF'}
+                            {loading ? <CircularProgress size={24} /> : '📥 Download Slides'}
                         </Button>
                         <Button
                             variant="outlined"

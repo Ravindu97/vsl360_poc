@@ -1,24 +1,26 @@
 {
   "id": "elegant_classic",
   "label": "Elegant Classic",
-  "description": "Warm premium layout with serif typography and gold accents.",
+  "description": "Premium modern travel itinerary with scenic backgrounds and gold accents.",
   "tokens": {
-    "paper": "#f5efe7",
-    "panel": "#fffaf2",
-    "line": "#d9cdbb",
+    "paper": "#ffffff",
+    "panel": "#f9f9f9",
+    "line": "#e0e0e0",
     "text": "#2c2c2c",
     "muted": "#666666",
-    "gold": "#b8860b",
-    "gold_dark": "#8b6914",
-    "cover_overlay": "rgba(20, 16, 10, 0.26)",
-    "cover_title": "#ffffff"
+    "gold": "#d4a574",
+    "gold_dark": "#b8860b",
+    "cover_overlay": "rgba(40, 80, 120, 0.35)",
+    "cover_title": "#ffffff",
+    "sky_blue": "#3d7da8",
+    "icon_bg": "rgba(0, 0, 0, 0.25)"
   },
   "layout": {
-    "page_padding_mm": 13,
-    "cover_image_height_mm": 150,
+    "page_padding_mm": 0,
+    "cover_image_height_mm": 297,
     "day_image_height_mm": 62,
     "day_image_width_mm": 66,
-    "corner_radius_px": 10,
-    "title_tracking_px": 1
+    "corner_radius_px": 8,
+    "title_tracking_px": 2
   }
 }

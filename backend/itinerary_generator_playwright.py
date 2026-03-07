@@ -6,6 +6,7 @@ import os
 from typing import Any, Dict, Optional, Tuple
 
 import requests
+from image_generator import auto_populate_images
 
 
 LOCAL_IMAGE_DIR = os.path.abspath(
@@ -161,6 +162,8 @@ def list_template_presets() -> Dict[str, Any]:
 
 
 def _build_template_data(trip_data: Dict) -> Dict:
+    # Auto-populate missing images from Unsplash or placeholders
+    trip_data = auto_populate_images(trip_data)
     days = trip_data.get("days", []) or []
     template_days = []
     for day in days:
