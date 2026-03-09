@@ -58,8 +58,8 @@ const ItineraryTestPage = () => {
                 const stripImages = (data) => {
                     const clone = JSON.parse(JSON.stringify(data));
                     // Remove base64 image data that bloats storage
-                    if (clone.cover_image && clone.cover_image.startsWith('data:')) {
-                        clone.cover_image = '';
+                    if (clone.cover_image_path && clone.cover_image_path.startsWith('data:')) {
+                        clone.cover_image_path = '';
                     }
                     if (Array.isArray(clone.days)) {
                         clone.days.forEach(d => {

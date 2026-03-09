@@ -29,7 +29,7 @@ from pptx.util import Inches, Pt, Emu
 from image_generator import auto_populate_images
 
 # ── constants ────────────────────────────────────────────────────────────────
-W, H = 13.33, 7.5  # widescreen dims (inches)
+W, H = 7.5, 13.33  # portrait dims (inches) — mobile-friendly 9:16
 
 LOCAL_IMAGE_DIR = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "sample_itinerary", "images")
@@ -252,11 +252,11 @@ def _safe_list(data, key: str):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  S L I D E   B U I L D E R S
+#  S L I D E   B U I L D E R S  (portrait 7.5 × 13.33)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def _add_cover_slide(prs, trip_data, t):
-    """Full-bleed cinematic cover with layered gradient overlay."""
+    """Full-bleed portrait cover — centred branding, duration pill, website."""
     slide = prs.slides.add_slide(prs.slide_layouts[6])
 
     # Full-bleed background image
@@ -264,120 +264,112 @@ def _add_cover_slide(prs, trip_data, t):
     if not _picture(slide, src, 0, 0, W, H):
         _rect(slide, 0, 0, W, H, t["overlay_dark"])
 
-    # Multi-layer gradient: darker at bottom for text legibility
-    _rect(slide, 0, 0, W, H, RGBColor(0, 0, 0), transparency=50)
-    _rect(slide, 0, 4.0, W, 3.5, RGBColor(0, 0, 0), transparency=30)
+    # Subtle dark overlay for text legibility
+    _rect(slide, 0, 0, W, H, RGBColor(0, 0, 0), transparency=60)
 
-    # Thin gold accent line across top
-    _rect(slide, 0, 0, W, 0.06, t["accent"])
-
-    # Brand mark — top-left
-    _text(slide, "VSL 360", 0.9, 0.5, 3, 0.45, 13, t["accent"], True, font=t["sans"],
-          spacing=6)
-    _text(slide, "T R A V E L  I T I N E R A R Y", 0.92, 0.88, 5, 0.3, 9.5,
-          RGBColor(210, 210, 210), False, font=t["sans"], spacing=0)
-
-    # Decorative thin line under brand
-    _thin_line(slide, 0.92, 1.22, 1.6, t["accent"])
-
-    # Trip title — large serif for editorial feel
-    _text(slide, trip_data.get("trip_name", "Travel Itinerary"),
-          0.9, 2.8, 8.5, 1.6, 54, RGBColor(255, 255, 255), True,
-          font=t["serif"])
-
-    # Country subtitle
-    country = trip_data.get("destination_country", "")
-    if country:
-        _text(slide, country.upper(), 0.95, 4.55, 5, 0.5, 18,
-              RGBColor(220, 215, 205), False, font=t["sans"], italic=True,
-              spacing=4)
-
-    # Decorative gold thin line under title block
-    _thin_line(slide, 0.92, 5.2, 3.5, t["accent"])
-
-    # Duration badge — bottom-right, frosted panel style
-    _rect(slide, 10.1, 5.5, 2.6, 1.3, RGBColor(0, 0, 0), t["accent"], rounded=True, transparency=40)
-    nights = trip_data.get("total_nights", 0)
-    days = trip_data.get("total_days", 0)
-    _text(slide, str(nights), 10.1, 5.55, 2.6, 0.65, 36, RGBColor(255, 255, 255), True,
+    # ── Brand block — top centre ──
+    _text(slide, "VSL 360", 0, 1.2, W, 0.55, 30, RGBColor(255, 255, 255), True,
           PP_ALIGN.CENTER, font=t["serif"])
-    _text(slide, f"NIGHTS  /  {days} DAYS", 10.1, 6.15, 2.6, 0.35, 9.5,
-          t["accent_light"], False, PP_ALIGN.CENTER, font=t["sans"])
+    _text(slide, "E X P L O R E   E V E R Y   A N G L E", 0, 1.75, W, 0.3, 8,
+          RGBColor(210, 210, 210), False, PP_ALIGN.CENTER, font=t["sans"])
 
-    # Customer name (if provided) — bottom-left
+    # Trip name — large elegant centred italic
+    trip_name = trip_data.get("trip_name", "Travel Itinerary")
+    _text(slide, trip_name, 0.4, 5.0, W - 0.8, 1.6, 52, RGBColor(255, 255, 255), True,
+          PP_ALIGN.CENTER, font=t["serif"], italic=True)
+
+    # Duration pill — rounded outline badge
+    days = trip_data.get("total_days", 0)
+    nights = trip_data.get("total_nights", 0)
+    pill_text = f"{days} DAYS  |  {nights} NIGHTS"
+    pill_w = 3.8
+    pill_x = (W - pill_w) / 2
+    _rect(slide, pill_x, 7.0, pill_w, 0.55, RGBColor(0, 0, 0),
+          RGBColor(255, 255, 255), rounded=True, transparency=80)
+    _text(slide, pill_text, pill_x, 7.0, pill_w, 0.55, 12,
+          RGBColor(255, 255, 255), True, PP_ALIGN.CENTER, font=t["sans"],
+          anchor=MSO_ANCHOR.MIDDLE)
+
+    # Customer name
     cust = trip_data.get("customer_name")
     if cust:
-        _text(slide, f"Prepared for {cust}", 0.92, 6.65, 6, 0.35, 12,
-              RGBColor(200, 200, 200), False, font=t["sans"], italic=True)
+        _text(slide, f"Prepared for {cust}", 0, 11.5, W, 0.35, 11,
+              RGBColor(200, 200, 200), False, PP_ALIGN.CENTER, font=t["sans"],
+              italic=True)
+
+    # Website at bottom
+    _text(slide, "www.visitsrilanka360.com", 0, 12.2, W, 0.35, 11,
+          RGBColor(220, 220, 220), False, PP_ALIGN.CENTER, font=t["sans"],
+          italic=True)
 
 
 def _add_overview_slide(prs, trip_data, t):
-    """Two-column editorial overview with decorative accents."""
+    """Portrait overview — stacked layout with destination card."""
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     _rect(slide, 0, 0, W, H, t["bg"])
 
-    # Decorative vertical gold stripe on left edge
-    _rect(slide, 0, 0, 0.06, H, t["accent"])
+    # Gold accent bar at top
+    _rect(slide, 0, 0, W, 0.06, t["accent"])
 
     # Section label
-    _text(slide, "OVERVIEW", 0.9, 0.6, 4, 0.35, 10, t["muted"], True, font=t["sans"])
-    _thin_line(slide, 0.9, 0.97, 1.2, t["accent"])
+    _text(slide, "OVERVIEW", 0.6, 0.55, 4, 0.3, 10, t["muted"], True, font=t["sans"])
+    _thin_line(slide, 0.6, 0.88, 1.2, t["accent"])
 
     # Title
-    _text(slide, "Your Journey", 0.9, 1.2, 6, 0.65, 38, t["ink"], True, font=t["serif"])
+    _text(slide, "Your Journey", 0.6, 1.1, 6, 0.65, 34, t["ink"], True, font=t["serif"])
 
-    # Overview paragraph — left column
+    # Overview text
     overview = trip_data.get("overview_text", "") or \
         "A carefully curated journey through breathtaking landscapes and rich cultural heritage."
-    _text(slide, overview, 0.9, 2.2, 6.8, 4.0, 15, t["sub"], False, font=t["sans"])
+    _text(slide, overview, 0.6, 2.0, W - 1.2, 2.5, 14, t["sub"], False, font=t["sans"])
 
-    # Dates line
+    # Dates
     start = trip_data.get("start_date", "")
     end = trip_data.get("end_date", "")
     if start and end:
-        _text(slide, f"{start}  —  {end}", 0.9, 6.4, 5, 0.35, 12, t["muted"], False,
+        _text(slide, f"{start}  —  {end}", 0.6, 4.4, 5, 0.3, 11, t["muted"], False,
               font=t["sans"], italic=True)
 
-    # Right panel — frosted card with location summary
-    _rect(slide, 8.4, 0.55, 4.35, 6.4, t["panel"], t["line"], rounded=True)
-    # Gold bar at top of card
-    _rect(slide, 8.4, 0.55, 4.35, 0.08, t["accent"])
-    _text(slide, "DESTINATIONS", 8.8, 1.0, 3.5, 0.35, 10, t["accent_dark"], True,
-          font=t["sans"])
-    _thin_line(slide, 8.8, 1.38, 2.0, t["line"])
+    # Destinations card — full-width below overview text
+    card_top = 5.1
+    card_w = W - 1.2
+    _rect(slide, 0.6, card_top, card_w, 7.5, t["panel"], t["line"], rounded=True)
+    _rect(slide, 0.6, card_top, card_w, 0.06, t["accent"])
 
-    y = 1.7
-    for item in _safe_list(trip_data, "location_summary")[:8]:
+    _text(slide, "DESTINATIONS", 1.0, card_top + 0.35, 4, 0.3, 10, t["accent_dark"], True,
+          font=t["sans"])
+    _thin_line(slide, 1.0, card_top + 0.7, 2.0, t["line"])
+
+    y = card_top + 1.0
+    for item in _safe_list(trip_data, "location_summary")[:10]:
         city = item.get("city", "")
         nights = item.get("nights", 0)
-        # Gold circle bullet
-        _circle(slide, 9.0, y + 0.13, 0.06, t["accent"])
-        _text(slide, city, 9.2, y, 2.5, 0.32, 15, t["ink"], True, font=t["sans"])
-        _text(slide, f"{nights} night{'s' if nights != 1 else ''}", 11.6, y, 1.0, 0.32,
-              12, t["muted"], False, PP_ALIGN.RIGHT, font=t["sans"])
-        y += 0.52
+        _circle(slide, 1.15, y + 0.13, 0.05, t["accent"])
+        _text(slide, city, 1.4, y, 3.5, 0.3, 14, t["ink"], True, font=t["sans"])
+        _text(slide, f"{nights} night{'s' if nights != 1 else ''}", 5.2, y, 1.5, 0.3,
+              11, t["muted"], False, PP_ALIGN.RIGHT, font=t["sans"])
+        y += 0.48
 
-    # Total at bottom of card
-    _thin_line(slide, 8.8, y + 0.15, 3.55, t["line"])
+    # Total
+    _thin_line(slide, 1.0, y + 0.15, card_w - 0.8, t["line"])
     _text(slide, f"{trip_data.get('total_nights', 0)} Nights  |  {trip_data.get('total_days', 0)} Days",
-          8.8, y + 0.35, 3.55, 0.35, 13, t["accent_dark"], True, PP_ALIGN.CENTER, font=t["sans"])
+          1.0, y + 0.35, card_w - 0.8, 0.35, 13, t["accent_dark"], True,
+          PP_ALIGN.CENTER, font=t["sans"])
 
 
 def _add_route_slide(prs, trip_data, t):
-    """Elegant horizontal timeline with connected nodes."""
+    """Portrait vertical route timeline."""
     days = _safe_list(trip_data, "days")
     if not days:
         return
 
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     _rect(slide, 0, 0, W, H, t["panel"])
-
-    # Decorative top line
     _rect(slide, 0, 0, W, 0.06, t["accent"])
 
-    _text(slide, "ROUTE", 0.9, 0.55, 3, 0.3, 10, t["muted"], True, font=t["sans"])
-    _thin_line(slide, 0.9, 0.88, 1.0, t["accent"])
-    _text(slide, "At a Glance", 0.9, 1.05, 5, 0.6, 36, t["ink"], True, font=t["serif"])
+    _text(slide, "ROUTE", 0.6, 0.55, 3, 0.3, 10, t["muted"], True, font=t["sans"])
+    _thin_line(slide, 0.6, 0.88, 1.0, t["accent"])
+    _text(slide, "At a Glance", 0.6, 1.1, 5, 0.55, 34, t["ink"], True, font=t["serif"])
 
     # Extract unique consecutive cities
     stops = []
@@ -387,260 +379,377 @@ def _add_route_slide(prs, trip_data, t):
             stops.append(city)
     if not stops:
         stops = ["Start", "Destination"]
-    max_n = 7
+    max_n = 10
     if len(stops) > max_n:
         stops = stops[:max_n - 1] + [stops[-1]]
 
-    # Timeline
-    rail_y = 3.7
-    rail_left = 1.4
-    rail_right = 11.9
-    rail_w = rail_right - rail_left
+    # Vertical timeline
+    rail_x = 1.4
+    rail_top = 2.2
+    rail_bottom = 11.5
+    rail_h = rail_bottom - rail_top
 
-    # Connector line
-    _thin_line(slide, rail_left, rail_y + 0.08, rail_w, t["line"], thickness=0.03)
+    # Vertical connector line
+    _rect(slide, rail_x - 0.015, rail_top, 0.03, rail_h, t["line"])
 
-    spacing = rail_w / max(1, len(stops) - 1)
+    spacing = rail_h / max(1, len(stops) - 1)
     for i, city in enumerate(stops):
-        cx = rail_left + i * spacing
+        cy = rail_top + i * spacing
         # Outer ring
-        _circle(slide, cx, rail_y + 0.09, 0.14, t["panel"], t["accent"])
+        _circle(slide, rail_x, cy, 0.14, t["panel"], t["accent"])
         # Inner dot
-        _circle(slide, cx, rail_y + 0.09, 0.07, t["accent"])
-        # City label below
-        _text(slide, city, cx - 0.75, rail_y + 0.45, 1.5, 0.42, 12, t["ink"], True,
-              PP_ALIGN.CENTER, font=t["sans"])
-        # Day number above
-        _text(slide, f"Day {i + 1}" if i < len(days) else "",
-              cx - 0.5, rail_y - 0.45, 1.0, 0.35, 9, t["muted"], False,
-              PP_ALIGN.CENTER, font=t["sans"])
+        _circle(slide, rail_x, cy, 0.07, t["accent"])
+        # City label to the right
+        _text(slide, city, 1.9, cy - 0.15, 4.0, 0.3, 14, t["ink"], True, font=t["sans"])
+        # Day number
+        day_idx = i + 1
+        if day_idx <= len(days):
+            _text(slide, f"Day {day_idx}", 1.9, cy + 0.15, 2.0, 0.25, 9, t["muted"],
+                  False, font=t["sans"])
 
-    # Summary bar at bottom
-    _rect(slide, 0.9, 5.8, 11.5, 1.0, t["panel_alt"], t["line"], rounded=True)
-    summary_lines = [
-        f"{trip_data.get('total_days', 0)} days  •  {trip_data.get('total_nights', 0)} nights",
-        "Curated experiences across each destination",
-    ]
-    _multiline_text(slide, summary_lines, 1.2, 5.95, 11.0, 0.8, 13, t["muted"],
-                    font=t["sans"], line_spacing=1.5, align=PP_ALIGN.CENTER)
+    # Summary
+    _rect(slide, 0.6, 12.0, W - 1.2, 0.8, t["panel_alt"], t["line"], rounded=True)
+    _text(slide, f"{trip_data.get('total_days', 0)} days  •  {trip_data.get('total_nights', 0)} nights  •  Curated experiences",
+          0.6, 12.15, W - 1.2, 0.5, 12, t["muted"], False, PP_ALIGN.CENTER, font=t["sans"])
 
 
-def _add_day_slide(prs, day, idx, t):
-    """Clean split layout — image on one side, content on the other."""
+def _add_day_pair_slide(prs, day_a, idx_a, day_b, idx_b, t):
+    """Two days stacked on one portrait slide — alternating image/card."""
     slide = prs.slides.add_slide(prs.slide_layouts[6])
 
-    left_image = idx % 2 == 0
-    img_src = day.get("image_path") or day.get("image_url")
+    # Warm beige background (visible at edges and between halves)
+    _rect(slide, 0, 0, W, H, t["accent_light"])
 
-    # Simple 50/50 split
-    split = 6.66
-    if left_image:
-        img_x, img_w = 0, split
-        content_x, content_w = split + 0.5, W - split - 0.9
+    half_h = H / 2  # ~6.665
+    gap = 0.12
+
+    # Top day: card left, image right
+    _draw_day_half(slide, day_a, idx_a, t, y_offset=0, half_h=half_h - gap / 2,
+                   image_right=True)
+    # Bottom day: image left, card right
+    _draw_day_half(slide, day_b, idx_b, t, y_offset=half_h + gap / 2,
+                   half_h=half_h - gap / 2, image_right=False)
+
+
+def _add_day_single_slide(prs, day, idx, t, image_right=True):
+    """Single day on a full portrait slide."""
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    _rect(slide, 0, 0, W, H, t["accent_light"])
+    _draw_day_full(slide, day, idx, t, image_right=image_right)
+
+
+def _draw_day_full(slide, day, idx, t, image_right=True):
+    """Single day filling the entire portrait slide — generous layout."""
+    m = 0.2  # outer margin
+
+    # Image: fills ~55% width, full height minus margins
+    img_w = 4.2
+    img_h = H - 2 * m
+    if image_right:
+        img_x = W - img_w - m
+        card_x = m
     else:
-        img_x, img_w = W - split, split
-        content_x, content_w = 0.7, W - split - 0.9
+        img_x = m
+        card_x = W - 5.2 - m
 
-    # White background for whole slide
-    _rect(slide, 0, 0, W, H, t["panel"])
-
-    # Image or placeholder
-    placed = _picture(slide, img_src, img_x, 0, img_w, H) if img_src else False
+    # Place image (drawn first, card overlaps it)
+    img_src = day.get("image_path") or day.get("image_url")
+    placed = _picture(slide, img_src, img_x, m, img_w, img_h) if img_src else False
     if not placed:
-        _rect(slide, img_x, 0, img_w, H, t["panel_alt"])
-        cx = img_x + img_w / 2
-        _text(slide, "— image —", cx - 0.8, 3.5, 1.6, 0.3, 11, t["muted"],
-              False, PP_ALIGN.CENTER, font=t["sans"], italic=True)
+        _rect(slide, img_x, m, img_w, img_h, t["panel_alt"])
 
-    # Thin gold vertical divider at the split edge
-    div_x = split if left_image else (W - split)
-    _rect(slide, div_x - 0.02, 0, 0.04, H, t["accent"])
+    # White rounded card — 70% width, overlaps image
+    card_w = 5.2
+    card_top = m + 0.3
+    card_h = H - 2 * m - 0.6
+    _rect(slide, card_x, card_top, card_w, card_h, t["panel"], rounded=True)
 
-    # Gold top bar
-    _rect(slide, 0, 0, W, 0.04, t["accent"])
+    # Content
+    pad = 0.5
+    cx = card_x + pad
+    cw = card_w - 2 * pad
 
-    # ── Header ──
     day_num = day.get("day", idx + 1)
+    _text(slide, f"Day {day_num}", cx, card_top + 0.5, cw, 0.7, 42,
+          t["ink"], True, font=t["serif"], italic=True)
 
-    _rect(slide, content_x, 0.7, 0.58, 0.58, t["accent"], rounded=True)
-    _text(slide, str(day_num), content_x, 0.7, 0.58, 0.58, 22,
-          RGBColor(255, 255, 255), True, PP_ALIGN.CENTER, font=t["serif"],
-          anchor=MSO_ANCHOR.MIDDLE)
+    title = day.get("title", "Untitled Day")
+    _text(slide, title, cx, card_top + 1.3, cw, 0.5, 22,
+          t["accent_dark"], True, font=t["serif"])
 
-    _text(slide, "DAY", content_x + 0.72, 0.68, 0.5, 0.22, 9,
-          t["muted"], True, font=t["sans"])
-    city = day.get("city", "")
-    if city:
-        _text(slide, city.upper(), content_x + 0.72, 0.92, content_w - 0.72,
-              0.30, 13, t["accent_dark"], True, font=t["sans"])
-
-    # Title
-    _text(slide, day.get("title", "Untitled Day"), content_x, 1.5, content_w,
-          0.8, 26, t["ink"], True, font=t["serif"])
-
-    _thin_line(slide, content_x, 2.35, 2.0, t["accent"])
-
-    # Activities
     activities = day.get("activities", []) or []
-    ay = 2.65
-    for act in activities[:7]:
+    ay = card_top + 2.2
+    for act in activities[:10]:
         desc = (act.get("description") or "").strip() or "Activity"
         time_s = (act.get("time") or "").strip()
-        if time_s:
-            _text(slide, f"{time_s}  —  {desc}", content_x, ay, content_w, 0.32,
-                  13, t["sub"], False, font=t["sans"])
-        else:
-            _circle(slide, content_x + 0.08, ay + 0.12, 0.04, t["accent"])
-            _text(slide, desc, content_x + 0.25, ay, content_w - 0.25, 0.32,
-                  13, t["sub"], False, font=t["sans"])
-        ay += 0.42
-
-    # Bottom stats
-    _thin_line(slide, content_x, 6.25, content_w, t["line"])
-    parts = []
-    tt = day.get("travel_time")
-    if tt and tt != "N/A":
-        parts.append(f"Travel: {tt}")
-    dist = day.get("distance")
-    if dist and dist != "N/A":
-        parts.append(f"Distance: {dist}")
-    overnight = day.get("overnight_city") or day.get("city")
-    if overnight:
-        parts.append(f"Overnight: {overnight}")
-    if parts:
-        _text(slide, "   •   ".join(parts), content_x, 6.4, content_w, 0.28,
-              10, t["muted"], False, font=t["sans"])
+        bullet_text = f"{desc} ({time_s})" if time_s else desc
+        _circle(slide, cx + 0.12, ay + 0.14, 0.05, t["ink"])
+        _text(slide, bullet_text, cx + 0.35, ay, cw - 0.35, 0.35,
+              14, t["sub"], False, font=t["sans"])
+        ay += 0.48
 
     optional = day.get("optional")
     if optional:
-        _text(slide, f"Optional: {optional}", content_x, 6.75, content_w, 0.28, 10,
-              t["accent_dark"], False, font=t["sans"], italic=True)
+        ay += 0.2
+        _text(slide, f"Optional : {optional}", cx, ay, cw, 0.3, 13,
+              t["sub"], False, font=t["sans"])
+
+    # Bottom stats
+    bottom_y = card_top + card_h - 1.1
+    _thin_line(slide, cx, bottom_y, cw, t["line"])
+
+    tt = day.get("travel_time")
+    dist = day.get("distance")
+    left_lines = []
+    if tt and tt != "N/A":
+        left_lines.append(f"Travel Time: {tt}")
+    if dist and dist != "N/A":
+        left_lines.append(f"Distance: {dist}")
+    if left_lines:
+        _multiline_text(slide, left_lines, cx, bottom_y + 0.15, cw / 2, 0.7,
+                        12, t["accent_dark"], font=t["sans"], bold=True,
+                        line_spacing=1.4)
+
+    overnight = day.get("overnight_city") or day.get("city")
+    if overnight:
+        _text(slide, "Overnight stay", cx + cw / 2, bottom_y + 0.15, cw / 2, 0.25, 11,
+              t["sub"], False, PP_ALIGN.RIGHT, font=t["sans"], italic=True)
+        _text(slide, overnight, cx + cw / 2, bottom_y + 0.45, cw / 2, 0.4, 18,
+              t["ink"], True, PP_ALIGN.RIGHT, font=t["serif"], italic=True)
+
+
+def _draw_day_half(slide, day, idx, t, y_offset, half_h, image_right=True):
+    """Draw one day within a vertical half of a portrait slide.
+
+    Image fills one side edge-to-edge, white rounded card overlaps it
+    from the other side — matching the reference design.
+    """
+    m = 0.2  # outer margin
+
+    # Image fills ~55% of width, full half height minus small margin
+    img_w = 4.0
+    img_h = half_h - 2 * m
+    if image_right:
+        img_x = W - img_w - m
+        card_x = m
+    else:
+        img_x = m
+        card_x = W - 4.8 - m
+
+    img_y = y_offset + m
+
+    # Place image first (card will overlap)
+    img_src = day.get("image_path") or day.get("image_url")
+    placed = _picture(slide, img_src, img_x, img_y, img_w, img_h) if img_src else False
+    if not placed:
+        _rect(slide, img_x, img_y, img_w, img_h, t["panel_alt"])
+
+    # White rounded card — overlaps image by ~1.5"
+    card_w = 4.8
+    card_top = y_offset + m + 0.15
+    card_h = half_h - 2 * m - 0.3
+    _rect(slide, card_x, card_top, card_w, card_h, t["panel"], rounded=True)
+
+    # ── Card content ──
+    pad = 0.45
+    cx = card_x + pad
+    cw = card_w - 2 * pad
+
+    # "Day X" — bold italic serif, large
+    day_num = day.get("day", idx + 1)
+    _text(slide, f"Day {day_num}", cx, card_top + 0.3, cw, 0.55, 32,
+          t["ink"], True, font=t["serif"], italic=True)
+
+    # Title / subtitle in gold bold
+    title = day.get("title", "Untitled Day")
+    city = day.get("city", "")
+    display_title = title
+    if city and city.lower() not in title.lower():
+        display_title = f"{title}"  # city shown via overnight at bottom
+    _text(slide, display_title, cx, card_top + 0.9, cw, 0.4, 16,
+          t["accent_dark"], True, font=t["serif"])
+
+    # Activities — bullet list
+    activities = day.get("activities", []) or []
+    ay = card_top + 1.5
+    max_acts = 6
+    for act in activities[:max_acts]:
+        desc = (act.get("description") or "").strip() or "Activity"
+        time_s = (act.get("time") or "").strip()
+        bullet_text = f"{desc} ({time_s})" if time_s else desc
+        _circle(slide, cx + 0.1, ay + 0.12, 0.045, t["ink"])
+        _text(slide, bullet_text, cx + 0.3, ay, cw - 0.3, 0.3,
+              12, t["sub"], False, font=t["sans"])
+        ay += 0.38
+
+    # Optional note
+    optional = day.get("optional")
+    if optional:
+        ay += 0.1
+        _text(slide, f"Optional : {optional}", cx, ay, cw, 0.28, 11,
+              t["sub"], False, font=t["sans"])
+
+    # ── Bottom stats — two groups ──
+    bottom_y = card_top + card_h - 0.8
+    _thin_line(slide, cx, bottom_y - 0.05, cw, t["line"])
+
+    # Left: Travel Time & Distance (gold bold)
+    tt = day.get("travel_time")
+    dist = day.get("distance")
+    left_lines = []
+    if tt and tt != "N/A":
+        left_lines.append(f"Travel Time: {tt}")
+    if dist and dist != "N/A":
+        left_lines.append(f"Distance: {dist}")
+    if left_lines:
+        _multiline_text(slide, left_lines, cx, bottom_y + 0.05, cw / 2, 0.65,
+                        10, t["accent_dark"], font=t["sans"], bold=True,
+                        line_spacing=1.3)
+
+    # Right: Overnight stay
+    overnight = day.get("overnight_city") or day.get("city")
+    if overnight:
+        _text(slide, "Overnight stay", cx + cw / 2, bottom_y + 0.05, cw / 2, 0.22, 10,
+              t["sub"], False, PP_ALIGN.RIGHT, font=t["sans"], italic=True)
+        _text(slide, overnight, cx + cw / 2, bottom_y + 0.32, cw / 2, 0.35, 14,
+              t["ink"], True, PP_ALIGN.RIGHT, font=t["serif"], italic=True)
 
 
 def _add_hotels_slide(prs, trip_data, t):
-    """Elegant accommodation table with alternating row tint."""
+    """Portrait accommodation list — clean card rows."""
     hotels = _safe_list(trip_data, "hotels")
     if not hotels:
         return
 
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     _rect(slide, 0, 0, W, H, t["bg"])
-    _rect(slide, 0, 0, W, 0.045, t["accent"])
+    _rect(slide, 0, 0, W, 0.06, t["accent"])
 
-    # Decorative vertical gold stripe
-    _rect(slide, 0, 0, 0.06, H, t["accent"])
+    _text(slide, "ACCOMMODATION", 0.6, 0.55, 4, 0.3, 10, t["muted"], True, font=t["sans"])
+    _thin_line(slide, 0.6, 0.88, 1.5, t["accent"])
+    _text(slide, "Where You'll Stay", 0.6, 1.1, 6, 0.55, 34, t["ink"], True, font=t["serif"])
 
-    _text(slide, "ACCOMMODATION", 0.9, 0.5, 4, 0.3, 10, t["muted"], True, font=t["sans"])
-    _thin_line(slide, 0.9, 0.83, 1.5, t["accent"])
-    _text(slide, "Where You'll Stay", 0.9, 1.0, 7, 0.6, 36, t["ink"], True, font=t["serif"])
-
-    # Column headers — adjusted positions to prevent Night(s) clipping
-    header_y = 1.95
-    _text(slide, "Property", 1.2, header_y, 4.0, 0.3, 10, t["muted"], True, font=t["sans"])
-    _text(slide, "Location", 5.5, header_y, 2.0, 0.3, 10, t["muted"], True, font=t["sans"])
-    _text(slide, "Room Type", 7.8, header_y, 2.5, 0.3, 10, t["muted"], True, font=t["sans"])
-    _text(slide, "Nights", 10.5, header_y, 1.8, 0.3, 10, t["muted"], True, PP_ALIGN.RIGHT, font=t["sans"])
-    _thin_line(slide, 0.85, 2.28, 11.5, t["line"])
-
-    y = 2.45
-    row_h = 0.75
-    for i, hotel in enumerate(hotels[:7]):
+    y = 2.1
+    card_w = W - 1.2
+    for i, hotel in enumerate(hotels[:8]):
         row_bg = t["panel_alt"] if i % 2 == 0 else t["panel"]
-        _rect(slide, 0.8, y, 11.55, row_h, row_bg, rounded=True)
+        row_h = 1.15
+        _rect(slide, 0.6, y, card_w, row_h, row_bg, t["line"], rounded=True)
+
         # Gold accent dot
-        _circle(slide, 1.05, y + row_h / 2, 0.055, t["accent"])
-        _text(slide, hotel.get("name", "Hotel"), 1.25, y + 0.18, 4.0, 0.4, 14, t["ink"], True, font=t["sans"])
-        _text(slide, hotel.get("city", ""), 5.5, y + 0.2, 2.0, 0.35, 13, t["sub"], False, font=t["sans"])
-        _text(slide, hotel.get("room_type", ""), 7.8, y + 0.2, 2.5, 0.35, 12, t["muted"], False, font=t["sans"])
-        _text(slide, hotel.get("night", ""), 10.5, y + 0.2, 1.8, 0.35, 13, t["accent_dark"], True,
-              PP_ALIGN.RIGHT, font=t["sans"])
-        y += row_h + 0.08
+        _circle(slide, 0.95, y + 0.3, 0.055, t["accent"])
+
+        # Hotel name
+        _text(slide, hotel.get("name", "Hotel"), 1.2, y + 0.15, card_w - 1.0, 0.35, 14,
+              t["ink"], True, font=t["sans"])
+        # Location + room type on second line
+        details = []
+        city = hotel.get("city", "")
+        room = hotel.get("room_type", "")
+        if city:
+            details.append(city)
+        if room:
+            details.append(room)
+        if details:
+            _text(slide, "  •  ".join(details), 1.2, y + 0.52, card_w - 2.0, 0.3, 11,
+                  t["muted"], False, font=t["sans"])
+
+        # Nights badge on right
+        night_val = hotel.get("night", "")
+        if night_val:
+            _text(slide, night_val, card_w - 0.8, y + 0.15, 1.6, 0.35, 13,
+                  t["accent_dark"], True, PP_ALIGN.RIGHT, font=t["sans"])
+
+        y += row_h + 0.12
 
 
 def _add_inclusions_slide(prs, trip_data, t):
-    """Split panel with elegant include / exclude lists."""
+    """Portrait inclusions — stacked include/exclude cards."""
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     _rect(slide, 0, 0, W, H, t["panel"])
-    _rect(slide, 0, 0, W, 0.045, t["accent"])
+    _rect(slide, 0, 0, W, 0.06, t["accent"])
 
-    # Decorative vertical gold stripe
-    _rect(slide, 0, 0, 0.06, H, t["accent"])
+    _text(slide, "PACKAGE DETAILS", 0.6, 0.55, 4, 0.3, 10, t["muted"], True, font=t["sans"])
+    _thin_line(slide, 0.6, 0.88, 1.5, t["accent"])
+    _text(slide, "What's Included", 0.6, 1.1, 6, 0.55, 34, t["ink"], True, font=t["serif"])
 
-    _text(slide, "PACKAGE DETAILS", 0.9, 0.5, 4, 0.3, 10, t["muted"], True, font=t["sans"])
-    _thin_line(slide, 0.9, 0.83, 1.5, t["accent"])
-    _text(slide, "What's Included", 0.9, 1.0, 7, 0.6, 36, t["ink"], True, font=t["serif"])
+    card_w = W - 1.2
 
-    # Left card — Included
-    card_top = 1.85
-    card_h = 4.95
-    left_w = 5.65
-    right_x = 6.7
-    right_w = 5.75
+    # ── Included card ──
+    inc_top = 2.0
+    includes = _safe_list(trip_data, "tour_includes")
+    inc_items = min(len(includes), 12)
+    inc_h = 0.9 + inc_items * 0.32
 
-    _rect(slide, 0.8, card_top, left_w, card_h, t["panel_alt"], t["line"], rounded=True)
-    # Thin accent bar (not heavy block)
-    _thin_line(slide, 0.8, card_top + 0.005, left_w, t["success"], thickness=0.035)
-    _text(slide, "INCLUDED", 1.15, card_top + 0.25, 4, 0.3, 10, t["success"], True, font=t["sans"])
-    _thin_line(slide, 1.15, card_top + 0.58, 1.5, t["line"])
+    _rect(slide, 0.6, inc_top, card_w, inc_h, t["panel_alt"], t["line"], rounded=True)
+    _thin_line(slide, 0.6, inc_top + 0.005, card_w, t["success"], thickness=0.04)
+    _text(slide, "INCLUDED", 0.95, inc_top + 0.2, 4, 0.3, 10, t["success"], True, font=t["sans"])
+    _thin_line(slide, 0.95, inc_top + 0.55, 1.5, t["line"])
 
-    y = card_top + 0.78
-    for item in _safe_list(trip_data, "tour_includes")[:12]:
-        _circle(slide, 1.25, y + 0.11, 0.045, t["success"])
-        _text(slide, item, 1.45, y, 4.75, 0.28, 12, t["sub"], False, font=t["sans"])
-        y += 0.33
+    y = inc_top + 0.7
+    for item in includes[:12]:
+        _circle(slide, 1.1, y + 0.1, 0.04, t["success"])
+        _text(slide, item, 1.3, y, card_w - 1.0, 0.25, 11, t["sub"], False, font=t["sans"])
+        y += 0.32
 
-    # Right card — Excluded
-    _rect(slide, right_x, card_top, right_w, card_h, t["panel_alt"], t["line"], rounded=True)
-    _thin_line(slide, right_x, card_top + 0.005, right_w, t["danger"], thickness=0.035)
-    _text(slide, "NOT INCLUDED", right_x + 0.35, card_top + 0.25, 4, 0.3, 10, t["danger"], True, font=t["sans"])
-    _thin_line(slide, right_x + 0.35, card_top + 0.58, 1.5, t["line"])
+    # ── Excluded card ──
+    exc_top = inc_top + inc_h + 0.3
+    excludes = _safe_list(trip_data, "tour_excludes")
+    exc_items = min(len(excludes), 12)
+    exc_h = 0.9 + exc_items * 0.32
 
-    y = card_top + 0.78
-    for item in _safe_list(trip_data, "tour_excludes")[:12]:
-        _circle(slide, right_x + 0.25, y + 0.11, 0.045, t["danger"])
-        _text(slide, item, right_x + 0.45, y, right_w - 0.7, 0.28, 12, t["sub"], False, font=t["sans"])
-        y += 0.33
+    _rect(slide, 0.6, exc_top, card_w, exc_h, t["panel_alt"], t["line"], rounded=True)
+    _thin_line(slide, 0.6, exc_top + 0.005, card_w, t["danger"], thickness=0.04)
+    _text(slide, "NOT INCLUDED", 0.95, exc_top + 0.2, 4, 0.3, 10, t["danger"], True, font=t["sans"])
+    _thin_line(slide, 0.95, exc_top + 0.55, 1.5, t["line"])
 
-    # Cost badge at bottom — centred
+    y = exc_top + 0.7
+    for item in excludes[:12]:
+        _circle(slide, 1.1, y + 0.1, 0.04, t["danger"])
+        _text(slide, item, 1.3, y, card_w - 1.0, 0.25, 11, t["sub"], False, font=t["sans"])
+        y += 0.32
+
+    # Cost badge
     cost = trip_data.get("cost_per_person")
     if cost:
-        badge_w = 5.0
+        badge_w = 4.5
         badge_x = (W - badge_w) / 2
-        _rect(slide, badge_x, 7.0, badge_w, 0.42, t["accent"], rounded=True)
-        _text(slide, f"Investment Per Person:  {cost}", badge_x, 7.02, badge_w, 0.38, 13,
+        badge_y = exc_top + exc_h + 0.4
+        _rect(slide, badge_x, badge_y, badge_w, 0.45, t["accent"], rounded=True)
+        _text(slide, f"Per Person:  {cost}", badge_x, badge_y + 0.02, badge_w, 0.4, 13,
               RGBColor(255, 255, 255), True, PP_ALIGN.CENTER, font=t["sans"])
 
 
 def _add_closing_slide(prs, trip_data, t):
-    """Cinematic closing slide with full-bleed image or dark fill."""
+    """Portrait closing — full-bleed image with centred thank-you."""
     slide = prs.slides.add_slide(prs.slide_layouts[6])
 
-    # Try cover image again for visual consistency
     src = trip_data.get("cover_image_path") or trip_data.get("cover_image_url")
     if not _picture(slide, src, 0, 0, W, H):
         _rect(slide, 0, 0, W, H, t["overlay_dark"])
 
-    _rect(slide, 0, 0, W, H, RGBColor(0, 0, 0), transparency=40)
-    _rect(slide, 0, 0, W, 0.05, t["accent"])
+    _rect(slide, 0, 0, W, H, RGBColor(0, 0, 0), transparency=45)
 
-    # Elegant centred content
-    _thin_line(slide, 5.4, 2.4, 2.5, t["accent"])
+    # Centred content
+    _thin_line(slide, (W - 2.5) / 2, 4.8, 2.5, t["accent"])
 
-    _text(slide, "Thank You", 0, 2.7, W, 0.9, 52, RGBColor(255, 255, 255), True,
+    _text(slide, "Thank You", 0, 5.2, W, 0.9, 48, RGBColor(255, 255, 255), True,
           PP_ALIGN.CENTER, font=t["serif"])
 
     _text(slide, trip_data.get("trip_name", ""),
-          0, 3.75, W, 0.5, 20, t["accent_light"], False, PP_ALIGN.CENTER, font=t["sans"],
+          0, 6.3, W, 0.5, 18, t["accent_light"], False, PP_ALIGN.CENTER, font=t["sans"],
           italic=True)
 
-    _thin_line(slide, 5.4, 4.5, 2.5, t["accent"])
+    _thin_line(slide, (W - 2.5) / 2, 7.1, 2.5, t["accent"])
 
-    _text(slide, "Your journey begins here.", 0, 4.8, W, 0.5, 16,
+    _text(slide, "Your journey begins here.", 0, 7.5, W, 0.45, 14,
           RGBColor(200, 200, 200), False, PP_ALIGN.CENTER, font=t["sans"])
 
-    # Brand footer
-    _text(slide, "VSL 360", 0, 6.5, W, 0.4, 12, t["accent"], True, PP_ALIGN.CENTER,
-          font=t["sans"])
+    # Brand
+    _text(slide, "VSL 360", 0, 11.5, W, 0.4, 14, t["accent"], True, PP_ALIGN.CENTER,
+          font=t["serif"])
+    _text(slide, "www.visitsrilanka360.com", 0, 12.0, W, 0.35, 10,
+          RGBColor(200, 200, 200), False, PP_ALIGN.CENTER, font=t["sans"])
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -666,8 +775,17 @@ def generate_vsl360_itinerary_slides(trip_data: Dict, output_path: Optional[str]
     _add_overview_slide(prs, trip_data, theme)
     _add_route_slide(prs, trip_data, theme)
 
-    for idx, day in enumerate(_safe_list(trip_data, "days")):
-        _add_day_slide(prs, day, idx, theme)
+    # Day slides — pair two days per portrait slide (like the reference style)
+    days = _safe_list(trip_data, "days")
+    i = 0
+    while i < len(days):
+        if i + 1 < len(days):
+            _add_day_pair_slide(prs, days[i], i, days[i + 1], i + 1, theme)
+            i += 2
+        else:
+            _add_day_single_slide(prs, days[i], i, theme,
+                                  image_right=(i % 2 == 0))
+            i += 1
 
     _add_hotels_slide(prs, trip_data, theme)
     _add_inclusions_slide(prs, trip_data, theme)
